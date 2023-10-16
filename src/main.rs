@@ -9,6 +9,8 @@ use axum::{
 use serde::Serialize;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+use utoipa::{OpenApi, ToSchema};
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +20,12 @@ async fn main() {
         .compact()
         .init();
 
+    #[derive(OpenApi)]
+    #[openapi(paths(handler), components(schemas(Hello)))]
+    struct ApiDoc;
+
     let app = Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/", get(handler))
         .route("/hello/:name", get(handler))
         .layer(
@@ -37,11 +44,18 @@ async fn main() {
         .unwrap();
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 struct Hello {
     message: String,
 }
 
+#[utoipa::path(
+       get,
+       path = "/hello/:name",
+       responses(
+              (status = 200, body = Hello)
+       )
+)]
 async fn handler() -> impl IntoResponse {
     (
         StatusCode::OK,
