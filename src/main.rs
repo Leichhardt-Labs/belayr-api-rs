@@ -1,15 +1,17 @@
 use axum::Router;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use dotenv::dotenv;
 use std::net::SocketAddr;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod controllers;
-
+use self::controllers::hello::Hello;
 use crate::controllers::hello::hello_routes;
 
-use self::controllers::hello::Hello;
+mod controllers;
 
 #[derive(OpenApi)]
 #[openapi(paths(controllers::hello::handler), components(schemas(Hello)))]
@@ -17,13 +19,24 @@ struct ApiDoc;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
     // Logging - Filter to INFO and above
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .compact()
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                "belayr-api-rs=debug,tower_http=debug,axum::rejection=trace".into()
+            }),
+        )
+        .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
+    // Add DB connection pool
+    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let config = AsyncDieselConnectionManager::<diesel_async::AsyncPgConnection>::new(db_url);
+    let pool = bb8::Pool::builder().build(config).await.unwrap();
+
     let app = Router::new()
+        .with_state(pool)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
