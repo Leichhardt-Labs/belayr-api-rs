@@ -4,8 +4,8 @@ CREATE TYPE "VenueType" AS ENUM (
     'outdoor'
 );
 
-CREATE TABLE public.climb_locations (
-    id uuid NOT NULL,
+CREATE TABLE climb_locations (
+    id uuid PRIMARY KEY,
     name character varying NOT NULL,
     address_line_one character varying,
     address_line_two character varying,

@@ -5,8 +5,8 @@ CREATE TYPE "ClimbType" AS ENUM (
     'lead'
 );
 
-CREATE TABLE public.climb_location_disciplines (
-    id uuid NOT NULL,
+CREATE TABLE climb_location_disciplines (
+    id uuid PRIMARY KEY,
     climb_location_id uuid NOT NULL,
     discipline "ClimbType" NOT NULL
 );
