@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Queryable, Insertable, Serialize, Deserialize)]
-#[table_name = "climb_locations"]
+#[diesel(table_name = climb_locations)]
 pub struct ClimbLocation {
     pub id: Uuid,
     pub name: String,

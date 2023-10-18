@@ -7,12 +7,14 @@ use axum::{
 };
 use diesel_async::RunQueryDsl;
 use serde::Serialize;
-use tracing::info;
 use utoipa::ToSchema;
 
 use crate::{
     models::ClimbLocation,
-    util::common::{internal_error, Pool},
+    util::{
+        common::{internal_error, Pool},
+        logging::LoggingRouterExt,
+    },
 };
 
 #[derive(Serialize, ToSchema)]
@@ -25,6 +27,7 @@ pub fn hello_routes(db_pool: Pool) -> Router {
         .route("/hello/:name", get(handler))
         .route("/locations", get(first_location))
         .with_state(db_pool)
+        .add_logging()
 }
 
 #[utoipa::path(
@@ -36,7 +39,7 @@ pub fn hello_routes(db_pool: Pool) -> Router {
     )
 )]
 pub async fn handler(Path(name): Path<String>) -> impl IntoResponse {
-    info!("Hello, {}!", name);
+    tracing::info!("Hello, {}!", name);
     (
         StatusCode::OK,
         Json(Hello {

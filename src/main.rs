@@ -2,8 +2,6 @@ use axum::Router;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use dotenv::dotenv;
 use std::net::SocketAddr;
-use tower_http::trace::{self, TraceLayer};
-use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -11,6 +9,7 @@ use utoipa_swagger_ui::SwaggerUi;
 use self::controllers::hello::Hello;
 use crate::controllers::goodbye::goodbye_routes;
 use crate::controllers::hello::hello_routes;
+use crate::util::logging::LoggingRouterExt;
 
 mod controllers;
 mod models;
@@ -27,6 +26,11 @@ async fn main() {
 
     // Logging - Filter to INFO and above
     tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                "belayr_api_rs=debug,tower_http=info,axum::rejection=trace".into()
+            }),
+        )
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
@@ -36,18 +40,15 @@ async fn main() {
     let pool = bb8::Pool::builder().build(config).await.unwrap();
 
     let app = Router::new()
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-        )
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(goodbye_routes(pool.clone()))
-        .merge(hello_routes(pool.clone()));
+        .merge(hello_routes(pool.clone()))
+        .add_logging();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     tracing::info!("listening on {}", addr);
+
     // Bind a TCP listener to the address.
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
