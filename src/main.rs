@@ -9,9 +9,13 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use self::controllers::hello::Hello;
+use crate::controllers::goodbye::goodbye_routes;
 use crate::controllers::hello::hello_routes;
 
 mod controllers;
+mod models;
+mod schema;
+mod util;
 
 #[derive(OpenApi)]
 #[openapi(paths(controllers::hello::handler), components(schemas(Hello)))]
@@ -32,14 +36,14 @@ async fn main() {
     let pool = bb8::Pool::builder().build(config).await.unwrap();
 
     let app = Router::new()
-        .with_state(pool)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         )
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .merge(hello_routes());
+        .merge(goodbye_routes(pool.clone()))
+        .merge(hello_routes(pool.clone()));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 

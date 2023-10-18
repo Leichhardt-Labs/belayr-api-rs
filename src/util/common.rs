@@ -1,3 +1,7 @@
+use axum::http::StatusCode;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::AsyncPgConnection;
+
 pub struct DatabaseConnection(
     bb8::PooledConnection<'static, AsyncDieselConnectionManager<AsyncPgConnection>>,
 );

@@ -20,10 +20,10 @@ pub struct Hello {
     message: String,
 }
 
-pub fn hello_routes(db_pool: Pool) -> Router {
+pub fn goodbye_routes(db_pool: Pool) -> Router {
     Router::new()
-        .route("/hello/:name", get(handler))
-        .route("/locations", get(first_location))
+        .route("/goodbye/:name", get(handler))
+        .route("/lecations", get(first_location))
         .with_state(db_pool)
 }
 
@@ -59,6 +59,6 @@ pub async fn first_location(
         Err(diesel::result::Error::NotFound) => {
             Err((StatusCode::NOT_FOUND, "No locations found".to_string()))
         }
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))),
     }
 }
