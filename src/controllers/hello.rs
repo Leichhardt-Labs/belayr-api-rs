@@ -7,17 +7,16 @@ use axum::{
 };
 use diesel_async::RunQueryDsl;
 use serde::Serialize;
-use utoipa::ToSchema;
 
 use crate::{
-    models::ClimbLocation,
+    models::database_models::ClimbLocation,
     util::{
         common::{internal_error, Pool},
         logging::LoggingRouterExt,
     },
 };
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize)]
 pub struct Hello {
     message: String,
 }
@@ -30,14 +29,6 @@ pub fn hello_routes(db_pool: Pool) -> Router {
         .add_logging()
 }
 
-#[utoipa::path(
-    get,
-    request_body = HelloBody,
-    path = "/hello/{name}",
-    responses(
-        (status = 200, body = Hello)
-    )
-)]
 pub async fn handler(Path(name): Path<String>) -> impl IntoResponse {
     tracing::info!("Hello, {}!", name);
     (

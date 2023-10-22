@@ -1,24 +1,17 @@
+use crate::controllers::goodbye::goodbye_routes;
+use crate::controllers::hello::hello_routes;
+use crate::controllers::profiles::profile_routes;
+use crate::util::logging::LoggingRouterExt;
 use axum::Router;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use dotenv::dotenv;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-
-use self::controllers::hello::Hello;
-use crate::controllers::goodbye::goodbye_routes;
-use crate::controllers::hello::hello_routes;
-use crate::util::logging::LoggingRouterExt;
 
 mod controllers;
 mod models;
 mod schema;
 mod util;
-
-#[derive(OpenApi)]
-#[openapi(paths(controllers::hello::handler), components(schemas(Hello)))]
-struct ApiDoc;
 
 #[tokio::main]
 async fn main() {
@@ -40,9 +33,9 @@ async fn main() {
     let pool = bb8::Pool::builder().build(config).await.unwrap();
 
     let app = Router::new()
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(goodbye_routes(pool.clone()))
         .merge(hello_routes(pool.clone()))
+        .merge(profile_routes(pool.clone()))
         .add_logging();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

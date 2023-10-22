@@ -6,7 +6,6 @@ use axum::{
     Router,
 };
 use diesel_async::RunQueryDsl;
-use serde::Serialize;
 
 use crate::{
     models::database_models::ClimbLocation,
@@ -16,27 +15,16 @@ use crate::{
     },
 };
 
-#[derive(Serialize)]
-pub struct Hello {
-    message: String,
-}
-
-pub fn goodbye_routes(db_pool: Pool) -> Router {
+pub fn profile_routes(db_pool: Pool) -> Router {
     Router::new()
-        .route("/goodbye/:name", get(handler))
-        .route("/lecations", get(first_location))
+        .route("/profile/:id/details", get(get_profile))
         .with_state(db_pool)
         .add_logging()
 }
 
-pub async fn handler(Path(name): Path<String>) -> impl IntoResponse {
+pub async fn get_profile(Path(name): Path<String>) -> impl IntoResponse {
     tracing::info!("Hello, {}!", name);
-    (
-        StatusCode::OK,
-        Json(Hello {
-            message: format!("Hello, {}!", name),
-        }),
-    )
+    (StatusCode::OK, "Hello, World!".to_string())
 }
 
 pub async fn first_location(
@@ -53,6 +41,6 @@ pub async fn first_location(
         Err(diesel::result::Error::NotFound) => {
             Err((StatusCode::NOT_FOUND, "No locations found".to_string()))
         }
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
     }
 }
