@@ -6,6 +6,7 @@ use super::database_models::Discipline;
 use super::generic_models::PagedResponse;
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProfileDetailsResponse {
     pub id: Uuid,
     pub username: String,
@@ -18,6 +19,7 @@ pub struct ProfileDetailsResponse {
 pub struct ProfileSessionsResponse(PagedResponse<ProfileSession>);
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProfileSession {
     pub id: Uuid,
     pub author_id: Uuid,
