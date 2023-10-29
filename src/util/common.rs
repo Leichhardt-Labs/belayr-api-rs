@@ -4,6 +4,12 @@ use diesel_async::AsyncPgConnection;
 
 pub type Pool = bb8::Pool<AsyncDieselConnectionManager<AsyncPgConnection>>;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum RepoError {
+    NotFound,
+    InternalError,
+}
+
 /// Utility function for mapping any error into a `500 Internal Server Error`
 /// response.
 pub fn internal_error<E>(err: E) -> (StatusCode, String)

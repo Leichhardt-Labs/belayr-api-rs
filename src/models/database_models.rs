@@ -118,22 +118,23 @@ pub struct SessionParticipant {
     pub user_id: Uuid,
 }
 
-#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Selectable, Serialize, Deserialize)]
 #[diesel(table_name = sessions)]
 pub struct Session {
     pub id: Uuid,
     pub name: String,
     pub location_id: Uuid,
+    pub start_time: NaiveDateTime,
+    pub end_time: Option<NaiveDateTime>,
     pub is_public: bool,
     pub discipline: Discipline,
     pub author_id: Uuid,
     pub maximum_participants: Option<i32>,
-    pub start_time: NaiveDateTime,
-    pub end_time: NaiveDateTime,
 }
 
 #[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize, PartialEq)]
 #[diesel(table_name = user_disciplines)]
+#[diesel(belongs_to(Profile))]
 pub struct UserDiscipline {
     pub id: Uuid,
     pub user_id: Uuid,

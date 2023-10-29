@@ -1,13 +1,17 @@
 use crate::controllers::profiles::profile_routes;
+use crate::repositories::profile_repo::{ProfileRepo, ProfileRepository};
+use crate::repositories::session_repo::{SessionRepo, SessionRepository};
 use crate::util::logging::LoggingRouterExt;
 use axum::Router;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use dotenv::dotenv;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod controllers;
 mod models;
+mod repositories;
 mod schema;
 mod util;
 
@@ -30,8 +34,11 @@ async fn main() {
     let config = AsyncDieselConnectionManager::<diesel_async::AsyncPgConnection>::new(db_url);
     let pool = bb8::Pool::builder().build(config).await.unwrap();
 
+    let profile_repo = Arc::new(ProfileRepository { pool: pool.clone() }) as ProfileRepo;
+    let session_repo = Arc::new(SessionRepository { pool: pool.clone() }) as SessionRepo;
+
     let app = Router::new()
-        .merge(profile_routes(pool.clone()))
+        .merge(profile_routes(profile_repo.clone(), session_repo.clone()))
         .add_logging();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

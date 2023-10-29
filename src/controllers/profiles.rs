@@ -5,64 +5,70 @@ use axum::{
     routing::get,
     Router,
 };
-use diesel::prelude::*;
-use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
-    models::{
-        database_models::{Discipline, Profile},
-        profile_models::ProfileDetailsResponse,
-    },
-    schema::{profiles, user_disciplines},
-    util::{
-        common::{internal_error, Pool},
-        logging::LoggingRouterExt,
-    },
+    models::{database_models::Session, profile_models::ProfileDetailsResponse},
+    repositories::{profile_repo::ProfileRepo, session_repo::SessionRepo},
+    util::{common::RepoError, logging::LoggingRouterExt},
 };
 
-pub fn profile_routes(db_pool: Pool) -> Router {
+pub fn profile_routes(profile_repo: ProfileRepo, session_repo: SessionRepo) -> Router {
     Router::new()
         .route("/profile/:id/details", get(get_profile))
-        .with_state(db_pool)
+        .with_state(profile_repo)
+        .route(
+            "/profile/:id/sessions/subscribed",
+            get(get_profile_sessions),
+        )
+        .with_state(session_repo)
         .add_logging()
-}
-
-async fn fetch_profile_by_id(conn: &mut AsyncPgConnection, id: Uuid) -> QueryResult<Profile> {
-    profiles::table
-        .filter(profiles::id.eq(id))
-        .first::<Profile>(conn)
-        .await
-}
-
-async fn fetch_user_disciplines_by_profile_id(
-    conn: &mut AsyncPgConnection,
-    profile_id: Uuid,
-) -> QueryResult<Vec<Discipline>> {
-    profiles::table
-        .inner_join(user_disciplines::table)
-        .filter(profiles::id.eq(profile_id))
-        .select(user_disciplines::discipline)
-        .load::<Discipline>(conn)
-        .await
 }
 
 pub async fn get_profile(
     Path(id): Path<Uuid>,
-    State(pool): State<Pool>,
+    State(profile_repo): State<ProfileRepo>,
 ) -> Result<Json<ProfileDetailsResponse>, (StatusCode, String)> {
-    let mut conn = pool.get().await.map_err(internal_error)?;
-
-    let profile = fetch_profile_by_id(&mut conn, id)
+    let profile = profile_repo
+        .get_profile(id)
         .await
         .map_err(|err| match err {
-            diesel::result::Error::NotFound => (StatusCode::NOT_FOUND, "Profile not found".into()),
-            _ => internal_error(err),
+            RepoError::NotFound => (StatusCode::NOT_FOUND, "Profile not found".into()),
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".into(),
+            ),
         })?;
 
-    let user_disciplines = fetch_user_disciplines_by_profile_id(&mut conn, id)
-        .await
-        .map_err(internal_error)?;
+    let user_disciplines =
+        profile_repo
+            .get_user_disciplines(id)
+            .await
+            .map_err(|err| match err {
+                RepoError::NotFound => (StatusCode::NOT_FOUND, "Profile not found".into()),
+                _ => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".into(),
+                ),
+            })?;
 
     Ok(Json((profile, user_disciplines).into()))
+}
+
+pub async fn get_profile_sessions(
+    Path(id): Path<Uuid>,
+    State(session_repo): State<SessionRepo>,
+) -> Result<Json<Vec<Session>>, (StatusCode, String)> {
+    let sessions = session_repo
+        .get_sessions_by_profile_id(id)
+        .await
+        .map_err(|err| match err {
+            RepoError::NotFound => (StatusCode::NOT_FOUND, "Profile not found".into()),
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".into(),
+            ),
+        })?;
+
+    Ok(Json(sessions))
 }
