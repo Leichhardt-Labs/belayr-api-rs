@@ -45,7 +45,7 @@ impl FromSql<ClimbType, Pg> for Discipline {
     }
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = climb_locations)]
 pub struct ClimbLocation {
     pub id: Uuid,
@@ -58,7 +58,7 @@ pub struct ClimbLocation {
     pub country: String,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = climb_location_disciplines)]
 pub struct ClimbLocationDiscipline {
     pub id: Uuid,
@@ -66,7 +66,7 @@ pub struct ClimbLocationDiscipline {
     pub discipline: Discipline,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = friends)]
 pub struct Friend {
     pub id: Uuid,
@@ -76,7 +76,7 @@ pub struct Friend {
     pub created_at: NaiveDateTime,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = profiles)]
 pub struct Profile {
     pub id: Uuid,
@@ -88,7 +88,7 @@ pub struct Profile {
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = preferred_locations)]
 pub struct PreferredLocation {
     pub id: Uuid,
@@ -96,7 +96,7 @@ pub struct PreferredLocation {
     pub climb_location_id: Uuid,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = session_participants)]
 pub struct SessionParticipant {
     pub id: Uuid,
@@ -104,7 +104,7 @@ pub struct SessionParticipant {
     pub user_id: Uuid,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = sessions)]
 pub struct Session {
     pub id: Uuid,
@@ -118,7 +118,7 @@ pub struct Session {
     pub end_time: NaiveDateTime,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize, PartialEq)]
 #[diesel(table_name = user_disciplines)]
 pub struct UserDiscipline {
     pub id: Uuid,

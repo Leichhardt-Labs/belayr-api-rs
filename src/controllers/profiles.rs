@@ -1,14 +1,20 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Json},
+    response::Json,
     routing::get,
     Router,
 };
+use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use uuid::Uuid;
 
 use crate::{
-    models::database_models::ClimbLocation,
+    models::{
+        database_models::{Discipline, Profile},
+        profile_models::ProfileDetailsResponse,
+    },
+    schema::{profiles, user_disciplines},
     util::{
         common::{internal_error, Pool},
         logging::LoggingRouterExt,
@@ -22,25 +28,34 @@ pub fn profile_routes(db_pool: Pool) -> Router {
         .add_logging()
 }
 
-pub async fn get_profile(Path(name): Path<String>) -> impl IntoResponse {
-    tracing::info!("Hello, {}!", name);
-    (StatusCode::OK, "Hello, World!".to_string())
-}
-
-pub async fn first_location(
+pub async fn get_profile(
+    Path(id): Path<Uuid>,
     State(pool): State<Pool>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-    use crate::schema::climb_locations::dsl::*;
-
+) -> Result<Json<ProfileDetailsResponse>, (StatusCode, String)> {
     let mut conn = pool.get().await.map_err(internal_error)?;
 
-    let first_location = climb_locations.first::<ClimbLocation>(&mut conn).await;
+    let profile = profiles::table
+        .filter(profiles::id.eq(id))
+        .first::<Profile>(&mut conn)
+        .await
+        .map_err(|err| match err {
+            diesel::result::Error::NotFound => (StatusCode::NOT_FOUND, "Profile not found".into()),
+            _ => internal_error(err),
+        })?;
 
-    match first_location {
-        Ok(first_location) => Ok(Json(first_location)),
-        Err(diesel::result::Error::NotFound) => {
-            Err((StatusCode::NOT_FOUND, "No locations found".to_string()))
-        }
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    let user_disciplines = profiles::table
+        .inner_join(user_disciplines::table)
+        .filter(profiles::id.eq(id))
+        .select(user_disciplines::discipline)
+        .load::<Discipline>(&mut conn)
+        .await
+        .map_err(internal_error)?;
+
+    Ok(Json(ProfileDetailsResponse {
+        id: profile.id,
+        username: profile.username,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        disciplines: user_disciplines,
+    }))
 }

@@ -2,5 +2,5 @@
 CREATE TABLE user_disciplines (
     id uuid PRIMARY KEY,
     user_id uuid NOT NULL,
-    discipline "ClimbType"
+    discipline "ClimbType" NOT NULL
 );

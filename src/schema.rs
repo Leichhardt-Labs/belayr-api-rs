@@ -92,7 +92,7 @@ diesel::table! {
     user_disciplines (id) {
         id -> Uuid,
         user_id -> Uuid,
-        discipline -> Nullable<ClimbType>,
+        discipline -> ClimbType,
     }
 }
 

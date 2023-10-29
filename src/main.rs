@@ -1,5 +1,3 @@
-use crate::controllers::goodbye::goodbye_routes;
-use crate::controllers::hello::hello_routes;
 use crate::controllers::profiles::profile_routes;
 use crate::util::logging::LoggingRouterExt;
 use axum::Router;
@@ -33,8 +31,6 @@ async fn main() {
     let pool = bb8::Pool::builder().build(config).await.unwrap();
 
     let app = Router::new()
-        .merge(goodbye_routes(pool.clone()))
-        .merge(hello_routes(pool.clone()))
         .merge(profile_routes(pool.clone()))
         .add_logging();
 
