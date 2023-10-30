@@ -17,8 +17,8 @@ pub struct SessionRepository {
 
 #[async_trait]
 pub trait FetchesSession {
-    /// Loop up a user by their id.
     async fn get_sessions_by_profile_id(&self, user_id: Uuid) -> Result<Vec<Session>, RepoError>;
+    async fn get_session_participants(&self, session_id: Uuid) -> Result<Vec<Uuid>, RepoError>;
 }
 
 #[async_trait]
@@ -56,5 +56,27 @@ impl FetchesSession for SessionRepository {
             })?;
 
         Ok(sessions)
+    }
+
+    async fn get_session_participants(&self, session_id: Uuid) -> Result<Vec<Uuid>, RepoError> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|_| RepoError::InternalError)?;
+
+        // Find out which users are subscribed to the session
+        // Query the Session Participants table
+        let profile_ids: Vec<Uuid> = session_participants::table
+            .filter(session_participants::session_id.eq(session_id))
+            .select(session_participants::user_id)
+            .load::<Uuid>(&mut conn)
+            .await
+            .map_err(|err| match err {
+                diesel::result::Error::NotFound => RepoError::NotFound,
+                _ => RepoError::InternalError,
+            })?;
+
+        Ok(profile_ids)
     }
 }

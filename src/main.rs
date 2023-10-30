@@ -1,4 +1,5 @@
 use crate::controllers::profiles::profile_routes;
+use crate::repositories::location_repo::{LocationRepo, LocationRepository};
 use crate::repositories::profile_repo::{ProfileRepo, ProfileRepository};
 use crate::repositories::session_repo::{SessionRepo, SessionRepository};
 use crate::util::logging::LoggingRouterExt;
@@ -36,9 +37,10 @@ async fn main() {
 
     let profile_repo = Arc::new(ProfileRepository { pool: pool.clone() }) as ProfileRepo;
     let session_repo = Arc::new(SessionRepository { pool: pool.clone() }) as SessionRepo;
+    let location_repo = Arc::new(LocationRepository { pool: pool.clone() }) as LocationRepo;
 
     let app = Router::new()
-        .merge(profile_routes(profile_repo.clone(), session_repo.clone()))
+        .merge(profile_routes(profile_repo, session_repo))
         .add_logging();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

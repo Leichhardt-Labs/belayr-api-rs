@@ -9,7 +9,9 @@ use uuid::Uuid;
 
 use crate::{
     models::{database_models::Session, profile_models::ProfileDetailsResponse},
-    repositories::{profile_repo::ProfileRepo, session_repo::SessionRepo},
+    repositories::{
+        location_repo::LocationRepo, profile_repo::ProfileRepo, session_repo::SessionRepo,
+    },
     util::{common::RepoError, logging::LoggingRouterExt},
 };
 
