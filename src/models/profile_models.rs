@@ -28,6 +28,26 @@ impl From<(Profile, Vec<Discipline>)> for ProfileDetailsResponse {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileSummaryResponse {
+    pub id: Uuid,
+    pub username: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+}
+
+impl From<Profile> for ProfileSummaryResponse {
+    fn from(profile: Profile) -> Self {
+        ProfileSummaryResponse {
+            id: profile.id,
+            username: profile.username,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct ProfileSessionsResponse(PagedResponse<ProfileSession>);
 
 #[derive(Debug, Serialize)]

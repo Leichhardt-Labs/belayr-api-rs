@@ -21,6 +21,7 @@ pub struct SessionRepository {
 pub trait FetchesSession {
     async fn get_sessions_by_profile_id(&self, user_id: Uuid) -> Result<Vec<Session>, RepoError>;
     async fn get_session_participants(&self, session_id: Uuid) -> Result<Vec<Uuid>, RepoError>;
+    async fn get_session(&self, session_id: Uuid) -> Result<Session, RepoError>;
 }
 
 impl DatabasePoolManager for SessionRepository {
@@ -31,6 +32,22 @@ impl DatabasePoolManager for SessionRepository {
 
 #[async_trait]
 impl FetchesSession for SessionRepository {
+    async fn get_session(&self, session_id: Uuid) -> Result<Session, RepoError> {
+        let mut conn = self.get_db_connection().await?;
+
+        // Query the Sessions table
+        let session: Session = sessions::table
+            .filter(sessions::id.eq(session_id))
+            .first(&mut conn)
+            .await
+            .map_err(|err| match err {
+                diesel::result::Error::NotFound => RepoError::NotFound,
+                _ => RepoError::InternalError,
+            })?;
+
+        Ok(session)
+    }
+
     async fn get_sessions_by_profile_id(
         &self,
         profile_id: Uuid,
