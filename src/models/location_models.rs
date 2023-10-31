@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use validator::Validate;
 
 use super::database_models::ClimbLocation;
 
@@ -51,9 +52,11 @@ impl From<ClimbLocation> for LocationSummary {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Validate, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetLocationsRequest {
+    #[validate(range(min = 1))]
     pub page: i64,
+    #[validate(range(min = 1, max = 100))]
     pub page_size: i64,
 }

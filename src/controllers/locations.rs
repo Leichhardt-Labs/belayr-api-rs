@@ -6,6 +6,7 @@ use axum::{
     Router,
 };
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
     models::{
@@ -46,6 +47,11 @@ pub async fn get_locations(
     State(location_repo): State<LocationRepo>,
     Query(request): Query<GetLocationsRequest>,
 ) -> Result<Json<PagedResponse<LocationSummary>>, (StatusCode, String)> {
+    // validate request
+    request
+        .validate()
+        .map_err(|err| (StatusCode::BAD_REQUEST, format!("Invalid request: {}", err)))?;
+
     let locations = location_repo
         .get_paged_locations(request.page, request.page_size)
         .await
