@@ -9,6 +9,8 @@ use crate::models::database_models::Session;
 use crate::schema::{session_participants, sessions};
 use crate::util::common::{Pool, RepoError};
 
+use super::base_repo::DatabasePoolManager;
+
 pub type SessionRepo = Arc<dyn FetchesSession + Send + Sync>;
 
 pub struct SessionRepository {
@@ -21,17 +23,19 @@ pub trait FetchesSession {
     async fn get_session_participants(&self, session_id: Uuid) -> Result<Vec<Uuid>, RepoError>;
 }
 
+impl DatabasePoolManager for SessionRepository {
+    fn get_pool(&self) -> &Pool {
+        &self.pool
+    }
+}
+
 #[async_trait]
 impl FetchesSession for SessionRepository {
     async fn get_sessions_by_profile_id(
         &self,
         profile_id: Uuid,
     ) -> Result<Vec<Session>, RepoError> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .map_err(|_| RepoError::InternalError)?;
+        let mut conn = self.get_db_connection().await?;
 
         // Find out which sessions the user is subscribed to
         // Query the Session Participants table
@@ -59,11 +63,7 @@ impl FetchesSession for SessionRepository {
     }
 
     async fn get_session_participants(&self, session_id: Uuid) -> Result<Vec<Uuid>, RepoError> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .map_err(|_| RepoError::InternalError)?;
+        let mut conn = self.get_db_connection().await?;
 
         // Find out which users are subscribed to the session
         // Query the Session Participants table

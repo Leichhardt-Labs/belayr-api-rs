@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::{
     models::{
         generic_models::PagedResponse,
-        location_models::{LocationDetailsResponse, LocationSummary},
+        location_models::{GetLocationsRequest, LocationDetailsResponse, LocationSummary},
     },
     repositories::location_repo::LocationRepo,
     util::{common::RepoError, logging::LoggingRouterExt},
@@ -44,11 +44,10 @@ pub async fn get_location_details(
 
 pub async fn get_locations(
     State(location_repo): State<LocationRepo>,
-    Query(page): Query<i64>,
-    Query(page_size): Query<i64>,
+    Query(request): Query<GetLocationsRequest>,
 ) -> Result<Json<PagedResponse<LocationSummary>>, (StatusCode, String)> {
     let locations = location_repo
-        .get_paged_locations(page, page_size)
+        .get_paged_locations(request.page, request.page_size)
         .await
         .map_err(|err| match err {
             RepoError::NotFound => (StatusCode::NOT_FOUND, "Locations not found".into()),
@@ -61,7 +60,7 @@ pub async fn get_locations(
     let location_summaries = locations.into_iter().map(|l| l.into()).collect();
 
     let total_pages = location_repo
-        .get_total_pages(page_size)
+        .get_total_pages(request.page_size)
         .await
         .map_err(|_| {
             (
@@ -71,7 +70,7 @@ pub async fn get_locations(
         })?;
 
     let paged_response = PagedResponse {
-        current_page: page,
+        current_page: request.page,
         total_pages,
         data: location_summaries,
     };

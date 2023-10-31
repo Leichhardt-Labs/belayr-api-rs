@@ -9,6 +9,8 @@ use crate::models::database_models::ClimbLocation;
 use crate::schema::climb_locations;
 use crate::util::common::{Pool, RepoError};
 
+use super::base_repo::DatabasePoolManager;
+
 pub type LocationRepo = Arc<dyn FetchesLocation + Send + Sync>;
 
 pub struct LocationRepository {
@@ -28,14 +30,16 @@ pub trait FetchesLocation {
     async fn get_total_pages(&self, page_size: i64) -> Result<i64, RepoError>;
 }
 
+impl DatabasePoolManager for LocationRepository {
+    fn get_pool(&self) -> &Pool {
+        &self.pool
+    }
+}
+
 #[async_trait]
 impl FetchesLocation for LocationRepository {
     async fn get_location(&self, location_id: Uuid) -> Result<ClimbLocation, RepoError> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .map_err(|_| RepoError::InternalError)?;
+        let mut conn = self.get_db_connection().await?;
 
         let location = climb_locations::table
             .filter(climb_locations::id.eq(location_id))
@@ -54,15 +58,11 @@ impl FetchesLocation for LocationRepository {
         page: i64,
         page_size: i64,
     ) -> Result<Vec<ClimbLocation>, RepoError> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .map_err(|_| RepoError::InternalError)?;
+        let mut conn = self.get_db_connection().await?;
 
         let locations = climb_locations::table
             .limit(page_size)
-            .offset(page * page_size)
+            .offset((page - 1) * page_size)
             .load::<ClimbLocation>(&mut conn)
             .await
             .map_err(|err| match err {

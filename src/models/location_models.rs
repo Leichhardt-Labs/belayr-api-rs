@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::database_models::ClimbLocation;
@@ -49,4 +49,11 @@ impl From<ClimbLocation> for LocationSummary {
             address_line_two: location.address_line_two.unwrap_or_default(),
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetLocationsRequest {
+    pub page: i64,
+    pub page_size: i64,
 }
