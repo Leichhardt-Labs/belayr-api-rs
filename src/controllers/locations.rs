@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{FromRef, Path, Query, State},
     http::StatusCode,
     response::Json,
     routing::get,
@@ -17,11 +17,22 @@ use crate::{
     util::{common::RepoError, logging::LoggingRouterExt},
 };
 
+#[derive(Clone)]
+struct LocationRouteState {
+    location_repo: LocationRepo,
+}
+
+impl FromRef<LocationRouteState> for LocationRepo {
+    fn from_ref(state: &LocationRouteState) -> LocationRepo {
+        state.location_repo.clone()
+    }
+}
+
 pub fn location_routes(location_repo: LocationRepo) -> Router {
     Router::new()
         .route("/location/:id/details", get(get_location_details))
         .route("/locations", get(get_locations))
-        .with_state(location_repo)
+        .with_state(LocationRouteState { location_repo })
         .add_logging()
 }
 

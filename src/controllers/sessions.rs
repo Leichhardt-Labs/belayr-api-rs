@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::{FromRef, Path, State},
     http::StatusCode,
     response::Json,
     routing::get,
@@ -15,6 +15,31 @@ use crate::{
     util::{common::RepoError, logging::LoggingRouterExt},
 };
 
+#[derive(Clone)]
+struct SessionRouteState {
+    profile_repo: ProfileRepo,
+    session_repo: SessionRepo,
+    location_repo: LocationRepo,
+}
+
+impl FromRef<SessionRouteState> for ProfileRepo {
+    fn from_ref(state: &SessionRouteState) -> ProfileRepo {
+        state.profile_repo.clone()
+    }
+}
+
+impl FromRef<SessionRouteState> for SessionRepo {
+    fn from_ref(state: &SessionRouteState) -> SessionRepo {
+        state.session_repo.clone()
+    }
+}
+
+impl FromRef<SessionRouteState> for LocationRepo {
+    fn from_ref(state: &SessionRouteState) -> LocationRepo {
+        state.location_repo.clone()
+    }
+}
+
 pub fn session_routes(
     profile_repo: ProfileRepo,
     session_repo: SessionRepo,
@@ -22,18 +47,24 @@ pub fn session_routes(
 ) -> Router {
     Router::new()
         .route("/session/:id/details", get(get_session))
-        .with_state((profile_repo, session_repo, location_repo))
+        .with_state(SessionRouteState {
+            profile_repo,
+            session_repo,
+            location_repo,
+        })
         .add_logging()
 }
 
 async fn get_session(
     Path(session_id): Path<Uuid>,
-    State((profile_repo, session_repo, location_repo)): State<(
-        ProfileRepo,
-        SessionRepo,
-        LocationRepo,
-    )>,
+    State(repos): State<SessionRouteState>,
 ) -> Result<Json<SessionDetailsResponse>, (StatusCode, String)> {
+    let SessionRouteState {
+        profile_repo,
+        session_repo,
+        location_repo,
+    } = repos;
+
     let session = session_repo
         .get_session(session_id)
         .await

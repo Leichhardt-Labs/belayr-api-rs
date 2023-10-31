@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::{FromRef, Path, State},
     http::StatusCode,
     response::Json,
     routing::get,
@@ -13,15 +13,35 @@ use crate::{
     util::{common::RepoError, logging::LoggingRouterExt},
 };
 
+#[derive(Clone)]
+struct ProfileRouteState {
+    profile_repo: ProfileRepo,
+    session_repo: SessionRepo,
+}
+
+impl FromRef<ProfileRouteState> for ProfileRepo {
+    fn from_ref(state: &ProfileRouteState) -> ProfileRepo {
+        state.profile_repo.clone()
+    }
+}
+
+impl FromRef<ProfileRouteState> for SessionRepo {
+    fn from_ref(state: &ProfileRouteState) -> SessionRepo {
+        state.session_repo.clone()
+    }
+}
+
 pub fn profile_routes(profile_repo: ProfileRepo, session_repo: SessionRepo) -> Router {
     Router::new()
         .route("/profile/:id/details", get(get_profile))
-        .with_state(profile_repo)
         .route(
             "/profile/:id/sessions/subscribed",
             get(get_profile_sessions),
         )
-        .with_state(session_repo)
+        .with_state(ProfileRouteState {
+            profile_repo,
+            session_repo,
+        })
         .add_logging()
 }
 
