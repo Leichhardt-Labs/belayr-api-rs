@@ -3,9 +3,9 @@ use serde::Serialize;
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PagedResponse<T> {
-    data: Vec<T>,
-    total_pages: usize,
-    current_page: usize,
+    pub data: Vec<T>,
+    pub total_pages: i64,
+    pub current_page: i64,
 }
 
 impl<T> PagedResponse<T> {

@@ -15,8 +15,6 @@ use diesel::{prelude::*, serialize};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::profile_models::ProfileDetailsResponse;
-
 #[derive(Debug, Serialize, Deserialize, PartialEq, FromSqlRow, AsExpression, Eq)]
 #[diesel(sql_type = ClimbType)]
 pub enum Discipline {
@@ -88,18 +86,6 @@ pub struct Profile {
     pub last_name: Option<String>,
     pub created_at: NaiveDateTime,
     pub modified_at: NaiveDateTime,
-}
-
-impl From<(Profile, Vec<Discipline>)> for ProfileDetailsResponse {
-    fn from((profile, disciplines): (Profile, Vec<Discipline>)) -> Self {
-        ProfileDetailsResponse {
-            id: profile.id,
-            username: profile.username,
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-            disciplines,
-        }
-    }
 }
 
 #[derive(Queryable, Insertable, Identifiable, Serialize, Deserialize)]

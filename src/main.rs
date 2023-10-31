@@ -1,3 +1,4 @@
+use crate::controllers::locations::location_routes;
 use crate::controllers::profiles::profile_routes;
 use crate::repositories::location_repo::{LocationRepo, LocationRepository};
 use crate::repositories::profile_repo::{ProfileRepo, ProfileRepository};
@@ -41,6 +42,7 @@ async fn main() {
 
     let app = Router::new()
         .merge(profile_routes(profile_repo, session_repo))
+        .merge(location_routes(location_repo))
         .add_logging();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

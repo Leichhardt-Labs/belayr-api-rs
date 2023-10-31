@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use serde::Serialize;
 use uuid::Uuid;
 
-use super::database_models::Discipline;
+use super::database_models::{Discipline, Profile};
 use super::generic_models::PagedResponse;
 
 #[derive(Debug, Serialize)]
@@ -13,6 +13,18 @@ pub struct ProfileDetailsResponse {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub disciplines: Vec<Discipline>,
+}
+
+impl From<(Profile, Vec<Discipline>)> for ProfileDetailsResponse {
+    fn from((profile, disciplines): (Profile, Vec<Discipline>)) -> Self {
+        ProfileDetailsResponse {
+            id: profile.id,
+            username: profile.username,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            disciplines,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]

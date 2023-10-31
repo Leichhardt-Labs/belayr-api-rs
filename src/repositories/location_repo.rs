@@ -24,6 +24,8 @@ pub trait FetchesLocation {
         page: i64,
         page_size: i64,
     ) -> Result<Vec<ClimbLocation>, RepoError>;
+
+    async fn get_total_pages(&self, page_size: i64) -> Result<i64, RepoError>;
 }
 
 #[async_trait]
@@ -69,5 +71,24 @@ impl FetchesLocation for LocationRepository {
             })?;
 
         Ok(locations)
+    }
+
+    async fn get_total_pages(&self, page_size: i64) -> Result<i64, RepoError> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|_| RepoError::InternalError)?;
+
+        let total = climb_locations::table
+            .count()
+            .first::<i64>(&mut conn)
+            .await
+            .map_err(|_| RepoError::InternalError)?;
+
+        // Round up to the nearest page
+        let total_pages = (total as f64 / page_size as f64).ceil() as i64;
+
+        Ok(total_pages)
     }
 }
